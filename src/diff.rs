@@ -5,15 +5,15 @@ enum Difference {
     Plus,
 }
 
-struct diff_entry {
+struct Entry {
     line_num: i32,
     difference: Difference,
     line: String,
 }
 
-impl diff_entry {
-    fn new(line_num: i32, difference: Difference, line: String) -> diff_entry {
-        diff_entry {
+impl Entry {
+    fn new(line_num: i32, difference: Difference, line: String) -> Entry {
+        Entry {
             line_num: line_num,
             difference: difference,
             line: line,
@@ -21,22 +21,22 @@ impl diff_entry {
     }
 }
 
-struct Diff {
-    entries: Vec<diff_entry>,
+pub struct Diff {
+    entries: Vec<Entry>,
 }
 
 impl Diff {
-    fn new() -> Diff {
-        let mut entries: Vec<diff_entry> = Vec::new();
+    pub fn new() -> Diff {
+        let mut entries: Vec<Entry> = Vec::new();
         Diff {
             entries: entries,
         }
     }
 
-    fn add_lines(&self, line_num: i32, lines: Vec<String>) {
+    pub fn add_lines(&mut self, line_num: i32, lines: Vec<String>) {
         let mut ln = line_num;
         for line in lines {
-            self.entries.push(diff_entry::new(ln, Difference::Plus, line));
+            self.entries.push(Entry::new(ln, Difference::Plus, line));
             ln += 1
         }
     }

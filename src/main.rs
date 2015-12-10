@@ -1,3 +1,5 @@
+mod diff;
+
 use std::io;
 
 enum Mode {
@@ -26,7 +28,7 @@ fn input_line(line: &String, mode: &mut Mode) {
     }
 }
 
-fn append_after(lines: Vec<line>, range: Range, diff: &Diff) {
+fn append_after(lines: Vec<String>, range: Range, diff: &mut diff::Diff) {
     diff.add_lines(range.start, lines);
 }
 
