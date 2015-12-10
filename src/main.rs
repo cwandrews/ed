@@ -1,7 +1,11 @@
+extern crate getopts;
+
 mod diff;
 
 use std::io;
 use std::io::Write;
+use std::env;
+use getopts::Options;
 
 struct Range {
     start: i32,
@@ -45,7 +49,17 @@ fn append_after(range: Range, diff: &mut diff::Diff) {
 }
 
 fn main() {
-    let prompt = ":";
+    let args: Vec<String> = env::args().collect();
+
+    let mut opts = Options::new();
+    opts.optopt("p", "prompt", "prompt to show while in command mode", "PROMPT");
+    let matches = match opts.parse(&args[1..]) {
+        Ok(m) => { m }
+        Err(f) => { panic!(f.to_string()) }
+    };
+
+    let prompt = matches.opt_str("p")
+        .unwrap_or_else(|| "".to_string());
     let mut diff = diff::Diff::new();
     let mut line_num: i32 = 1;
     loop {

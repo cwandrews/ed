@@ -2,3 +2,6 @@
 name = "ed"
 version = "0.1.0"
 authors = ["Charlie Andrews <charlieandrews.cwa@gmail.com>"]
+
+[dependencies]
+getopts = "0.2"
