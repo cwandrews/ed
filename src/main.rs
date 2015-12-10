@@ -1,6 +1,7 @@
 mod diff;
 
 use std::io;
+use std::io::Write;
 
 struct Range {
     start: i32,
@@ -48,6 +49,8 @@ fn main() {
     let mut diff = diff::Diff::new();
     let mut line_num: i32 = 1;
     loop {
+        print!("{}", prompt);
+        io::stdout().flush();
         let mut line = String::new();
         match io::stdin().read_line(&mut line) {
             Ok(_) => (),
