@@ -5,6 +5,11 @@ enum Mode {
     Input,
 }
 
+struct Range {
+    start: i32,
+    end: i32,
+}
+
 
 fn command_line(line: &String, mode: &mut Mode) {
     match line.trim() {
@@ -19,6 +24,10 @@ fn input_line(line: &String, mode: &mut Mode) {
         "." => *mode = Mode::Command,
         _ => println!("Input: {}", line),
     }
+}
+
+fn append_after(lines: Vec<line>, range: Range, diff: &Diff) {
+    diff.add_lines(range.start, lines);
 }
 
 fn main() {
