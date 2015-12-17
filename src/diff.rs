@@ -47,6 +47,12 @@ mod tests {
     use super::*;
 
     #[test]
+    fn new_diff_empty() {
+        let mut diff = Diff::new();
+        assert!(diff.entries.is_empty());
+    }
+
+    #[test]
     fn diff_has_lines() {
         let mut diff = Diff::new();
         diff.add_line(1, "Here is a line".to_string());
