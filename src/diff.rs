@@ -40,6 +40,10 @@ impl Diff {
     pub fn del_line(&mut self, line_num: i32, line: String) {
         self.entries.push(Entry::new(line_num, Difference::Minus, line));
     }
+
+    pub fn undo(&mut self) {
+        self.entries.pop();
+    }
 }
 
 #[cfg(test)]
@@ -59,5 +63,13 @@ mod tests {
         diff.add_line(2, "and another".to_string());
         diff.add_line(3, "and one more".to_string());
         assert_eq!(diff.entries.len(), 3);
+    }
+
+    #[test]
+    fn diff_undo() {
+        let mut diff = Diff::new();
+        diff.add_line(1, "Here is a line".to_string());
+        diff.undo();
+        assert!(diff.entries.is_empty());
     }
 }
