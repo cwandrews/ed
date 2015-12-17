@@ -41,3 +41,21 @@ impl Diff {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn diff_has_lines() {
+        let mut diff = Diff::new();
+        let lines = vec![
+            "Here is a line".to_string(),
+            "and another".to_string(),
+            "and one more".to_string(),
+            ];
+        diff.add_lines(1, lines);
+        assert_eq!(diff.entries.len(), 3);
+    }
+
+}
