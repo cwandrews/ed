@@ -45,7 +45,11 @@ fn command(line: &String, line_num: &mut i32, diff: &mut diff::Diff) {
 }
 
 fn append_after(range: Range, diff: &mut diff::Diff) {
-    diff.add_lines(range.end+1, input());
+    let lines = input();
+    let mut ln = range.end+1;
+    for line in lines {
+        diff.add_line(ln, line);
+    }
 }
 
 fn main() {

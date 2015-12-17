@@ -33,12 +33,12 @@ impl Diff {
         }
     }
 
-    pub fn add_lines(&mut self, line_num: i32, lines: Vec<String>) {
-        let mut ln = line_num;
-        for line in lines {
-            self.entries.push(Entry::new(ln, Difference::Plus, line));
-            ln += 1
-        }
+    pub fn add_line(&mut self, line_num: i32, line: String) {
+        self.entries.push(Entry::new(line_num, Difference::Plus, line));
+    }
+
+    pub fn del_line(&mut self, line_num: i32, line: String) {
+        self.entries.push(Entry::new(line_num, Difference::Minus, line));
     }
 }
 
@@ -49,13 +49,9 @@ mod tests {
     #[test]
     fn diff_has_lines() {
         let mut diff = Diff::new();
-        let lines = vec![
-            "Here is a line".to_string(),
-            "and another".to_string(),
-            "and one more".to_string(),
-            ];
-        diff.add_lines(1, lines);
+        diff.add_line(1, "Here is a line".to_string());
+        diff.add_line(2, "and another".to_string());
+        diff.add_line(3, "and one more".to_string());
         assert_eq!(diff.entries.len(), 3);
     }
-
 }
