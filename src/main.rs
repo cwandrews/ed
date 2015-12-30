@@ -7,9 +7,78 @@ use std::io::Write;
 use std::env;
 use getopts::Options;
 
+static CurrentAddress: Address = Address::Nth(0);
+
 struct Range {
-    start: i32,
-    end: i32,
+    start: Box<Address>,
+    end: Box<Address>,
+}
+
+enum Address {
+    Current,
+    Last,
+    Nth(i32),
+    Previous,
+    NthPrevious(i32),
+    Next,
+    NthNext(i32),
+    All,
+    Range(Range),
+    CurrentToEnd,
+    RENext(String),
+    REPrevious(String),
+    Mark(String),
+}
+
+trait Operation {
+    fn apply(Address, &diff::Diff) -> Result<diff::Diff, String>;
+}
+
+struct nop;
+
+impl Operation for nop {
+    fn apply(addr: Address, diff: &diff::Diff) -> Result<diff::Diff, String> {
+        panic!("Command didn't get set. This shouldn't have happened");
+        Err("Command didn't get set. This shouldn't have happened".to_string())
+    }
+}
+
+struct append_after;
+
+impl Operation for append_after {
+    fn apply(addr: Address, diff: &diff::Diff) -> Result<diff::Diff, String> {
+        let line_num: i32 = match addr {
+            Address::Nth(ln) => ln,
+            _ => 0,
+        };
+        input()
+            .map_err(|err| err.to_string())
+            .map(|lines| {
+                diff.add_lines(line_num, lines)
+            })
+    }
+}
+
+struct undo;
+
+impl Operation for undo {
+    fn apply(addr: Address, diff: &diff::Diff) -> Result<diff::Diff, String> {
+        Ok(diff.undo())
+    }
+}
+
+struct quit;
+
+impl Operation for quit {
+    fn apply(addr: Address, diff: &diff::Diff) -> Result<diff::Diff, String> {
+        std::process::exit(0);
+        Err("Should never get here".to_string())
+    }
+}
+
+struct Command {
+    address: Address,
+    operation: Operation,
 }
 
 fn input() -> Result<Vec<String>, io::Error> {
@@ -32,28 +101,30 @@ fn input() -> Result<Vec<String>, io::Error> {
     Ok(lines)
 }
 
-fn command(line: &String, line_num: &mut i32, diff: &diff::Diff) -> Result<diff::Diff, String> {
-    // parse the command line to get
-    // Line num or range
-    // command
-    match line.trim() {
-        "a" => {
-            append_after(Range{start: *line_num, end: *line_num}, diff)
-                .map_err(|err| err.to_string())
+fn parse_cmd(line: &String) -> Result<Command, String> {
+    let mut command = Command {
+        address: Address::Current,
+        command: nop,
+    };
+    command.command = match line.trim() {
+        "a" => append_after,
+        "q" => quit,
+        "u" => undo,
+        _ => {
+            return Err("Uknown command".to_string())
         },
-        "q" => std::process::exit(0),
-        "u" => Ok(diff.undo()),
-        _ => Err("?".to_string()),
-    }
+    };
+    Ok(command)
 }
 
-fn append_after(range: Range, diff: &diff::Diff) -> Result<diff::Diff, io::Error> {
-    input()
-        .map_err(|err| err)
-        .map(|lines| {
-            diff.add_lines(range.end+1, lines)
+fn command(line: &String, line_num: i32, diff: &diff::Diff) -> Result<diff::Diff, String> {
+    parse_cmd(line)
+        .map_err(|err| err.to_string())
+        .and_then(|cmd| {
+            cmd.operation.apply(cmd.address, diff)
         })
 }
+
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -86,7 +157,7 @@ fn main() {
                 continue
             },
         }
-        match command(&line, &mut line_num, &mut diff) {
+        match command(&line, line_num, &mut diff) {
             Ok(d) => {
                 diff = d;
             },
