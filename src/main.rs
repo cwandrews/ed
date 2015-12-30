@@ -12,13 +12,14 @@ struct Range {
     end: i32,
 }
 
-fn input() -> Vec<String> {
+fn input() -> Result<Vec<String>, io::Error> {
     let mut lines: Vec<String> = Vec::new();
     loop {
         let mut line = String::new();
-        io::stdin().read_line(&mut line)
-            .ok()
-            .expect("Error reading line");
+        match io::stdin().read_line(&mut line) {
+            Err(error) => return Err(error),
+            Ok(_) => {},
+        }
         match line.trim() {
             "." => {
                 break
@@ -28,28 +29,30 @@ fn input() -> Vec<String> {
             }
         }
     }
-    return lines;
+    Ok(lines)
 }
 
-fn command(line: &String, line_num: &mut i32, diff: &mut diff::Diff) {
+fn command(line: &String, line_num: &mut i32, diff: &diff::Diff) -> Result<diff::Diff, String> {
     // parse the command line to get
     // Line num or range
     // command
     match line.trim() {
         "a" => {
-            append_after(Range{start: *line_num, end: *line_num}, diff);
+            append_after(Range{start: *line_num, end: *line_num}, diff)
+                .map_err(|err| err.to_string())
         },
         "q" => std::process::exit(0),
-        _ => println!("Command: {}", line),
+        "u" => Ok(diff.undo()),
+        _ => Err("?".to_string()),
     }
 }
 
-fn append_after(range: Range, diff: &mut diff::Diff) {
-    let lines = input();
-    let mut ln = range.end+1;
-    for line in lines {
-        diff.add_line(ln, line);
-    }
+fn append_after(range: Range, diff: &diff::Diff) -> Result<diff::Diff, io::Error> {
+    input()
+        .map_err(|err| err)
+        .map(|lines| {
+            diff.add_lines(range.end+1, lines)
+        })
 }
 
 fn main() {
@@ -59,7 +62,7 @@ fn main() {
     opts.optopt("p", "prompt", "prompt to show while in command mode", "PROMPT");
     let matches = match opts.parse(&args[1..]) {
         Ok(m) => { m }
-        Err(f) => { panic!(f.to_string()) }
+        Err(f) => panic!(f.to_string())
     };
 
     let prompt = matches.opt_str("p")
@@ -68,7 +71,13 @@ fn main() {
     let mut line_num: i32 = 1;
     loop {
         print!("{}", prompt);
-        io::stdout().flush();
+        match io::stdout().flush() {
+            Ok(_) => (),
+            Err(err) => {
+                println!("Error flushing stdout: {}", err);
+                continue
+            }
+        }
         let mut line = String::new();
         match io::stdin().read_line(&mut line) {
             Ok(_) => (),
@@ -77,6 +86,18 @@ fn main() {
                 continue
             },
         }
-        command(&line, &mut line_num, &mut diff);
+        match command(&line, &mut line_num, &mut diff) {
+            Ok(d) => {
+                diff = d;
+            },
+            Err(err) => println!("Error: {}", err),
+            
+        }
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    
 }
