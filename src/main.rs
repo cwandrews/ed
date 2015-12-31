@@ -7,7 +7,7 @@ use std::io::Write;
 use std::env;
 use getopts::Options;
 
-static CurrentAddress: Address = Address::Nth(0);
+static CurrentAddress: Address = Address::Nth(1);
 
 struct Range {
     start: Box<Address>,
@@ -28,11 +28,6 @@ enum Address {
     RENext(String),
     REPrevious(String),
     Mark(String),
-}
-
-fn nop(addr: Address, diff: &diff::Diff) -> Result<diff::Diff, String> {
-    panic!("Command didn't get set. This shouldn't have happened");
-    Err("Command didn't get set. This shouldn't have happened".to_string())
 }
 
 fn append_after(addr: Address, diff: &diff::Diff) -> Result<diff::Diff, String> {
@@ -84,25 +79,36 @@ fn input() -> Result<Vec<String>, io::Error> {
 fn parse_cmd(line: &String) -> Result<Command, String> {
     let mut command = Command {
         address: Address::Current,
-        operation: nop,
-    };
-    command.operation = match line.trim() {
-        "a" => append_after,
-        "q" => quit,
-        "u" => undo,
-        _ => {
-            return Err("Uknown command".to_string())
-        },
+        operation: match line.trim() {
+            "a" => append_after,
+            "q" => quit,
+            "u" => undo,
+            _ => {
+                return Err("Uknown command".to_string())
+            },
+        }
     };
     Ok(command)
 }
 
-fn command(line: &String, line_num: i32, diff: &diff::Diff) -> Result<diff::Diff, String> {
+fn command(line: &String, diff: &diff::Diff) -> Result<diff::Diff, String> {
     parse_cmd(line)
         .map_err(|err| err.to_string())
         .and_then(|cmd| {
             (cmd.operation)(cmd.address, diff)
         })
+}
+
+fn cmd_line(prompt: &String) -> Result<String, String> {
+    let mut line = String::new();
+    print!("{}", prompt);
+    io::stdout().flush()
+        .map_err(|err| err.to_string())
+        .and_then(|_| {
+            io::stdin().read_line(&mut line)
+                .map_err(|err| err.to_string())
+        })
+        .and_then(|_| Ok(line))
 }
 
 
@@ -119,36 +125,12 @@ fn main() {
     let prompt = matches.opt_str("p")
         .unwrap_or_else(|| "".to_string());
     let mut diff = diff::Diff::new();
-    let mut line_num: i32 = 1;
     loop {
-        print!("{}", prompt);
-        match io::stdout().flush() {
-            Ok(_) => (),
-            Err(err) => {
-                println!("Error flushing stdout: {}", err);
-                continue
+        match cmd_line(&prompt)
+            .map_err(|err| err.to_string())
+            .and_then(|line| command(&line, &diff)) {
+                Ok(d) => diff = d,
+                Err(err) => println!("{}", err),
             }
-        }
-        let mut line = String::new();
-        match io::stdin().read_line(&mut line) {
-            Ok(_) => (),
-            Err(_) => {
-                println!("?");
-                continue
-            },
-        }
-        match command(&line, line_num, &mut diff) {
-            Ok(d) => {
-                diff = d;
-            },
-            Err(err) => println!("Error: {}", err),
-            
-        }
     }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
 }
