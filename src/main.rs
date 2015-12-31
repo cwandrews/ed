@@ -30,55 +30,35 @@ enum Address {
     Mark(String),
 }
 
-trait Operation {
-    fn apply(Address, &diff::Diff) -> Result<diff::Diff, String>;
+fn nop(addr: Address, diff: &diff::Diff) -> Result<diff::Diff, String> {
+    panic!("Command didn't get set. This shouldn't have happened");
+    Err("Command didn't get set. This shouldn't have happened".to_string())
 }
 
-struct nop;
-
-impl Operation for nop {
-    fn apply(addr: Address, diff: &diff::Diff) -> Result<diff::Diff, String> {
-        panic!("Command didn't get set. This shouldn't have happened");
-        Err("Command didn't get set. This shouldn't have happened".to_string())
-    }
+fn append_after(addr: Address, diff: &diff::Diff) -> Result<diff::Diff, String> {
+    let line_num: i32 = match addr {
+        Address::Nth(ln) => ln,
+        _ => 0,
+    };
+    input()
+        .map_err(|err| err.to_string())
+        .map(|lines| {
+            diff.add_lines(line_num, lines)
+        })
 }
 
-struct append_after;
-
-impl Operation for append_after {
-    fn apply(addr: Address, diff: &diff::Diff) -> Result<diff::Diff, String> {
-        let line_num: i32 = match addr {
-            Address::Nth(ln) => ln,
-            _ => 0,
-        };
-        input()
-            .map_err(|err| err.to_string())
-            .map(|lines| {
-                diff.add_lines(line_num, lines)
-            })
-    }
+fn undo(addr: Address, diff: &diff::Diff) -> Result<diff::Diff, String> {
+    Ok(diff.undo())
 }
 
-struct undo;
-
-impl Operation for undo {
-    fn apply(addr: Address, diff: &diff::Diff) -> Result<diff::Diff, String> {
-        Ok(diff.undo())
-    }
-}
-
-struct quit;
-
-impl Operation for quit {
-    fn apply(addr: Address, diff: &diff::Diff) -> Result<diff::Diff, String> {
-        std::process::exit(0);
-        Err("Should never get here".to_string())
-    }
+fn quit(addr: Address, diff: &diff::Diff) -> Result<diff::Diff, String> {
+    std::process::exit(0);
+    Err("Should never get here".to_string())
 }
 
 struct Command {
     address: Address,
-    operation: Operation,
+    operation: fn(Address, &diff::Diff) -> Result<diff::Diff, String>,
 }
 
 fn input() -> Result<Vec<String>, io::Error> {
@@ -104,9 +84,9 @@ fn input() -> Result<Vec<String>, io::Error> {
 fn parse_cmd(line: &String) -> Result<Command, String> {
     let mut command = Command {
         address: Address::Current,
-        command: nop,
+        operation: nop,
     };
-    command.command = match line.trim() {
+    command.operation = match line.trim() {
         "a" => append_after,
         "q" => quit,
         "u" => undo,
@@ -121,7 +101,7 @@ fn command(line: &String, line_num: i32, diff: &diff::Diff) -> Result<diff::Diff
     parse_cmd(line)
         .map_err(|err| err.to_string())
         .and_then(|cmd| {
-            cmd.operation.apply(cmd.address, diff)
+            (cmd.operation)(cmd.address, diff)
         })
 }
 
