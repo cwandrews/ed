@@ -1,16 +1,16 @@
 use std::vec::Vec;
 
 #[derive(Clone)]
-enum Difference {
+pub enum Difference {
     Minus,
     Plus,
 }
 
 #[derive(Clone)]
-struct Entry {
-    line_num: i32,
-    difference: Difference,
-    line: String,
+pub struct Entry {
+    pub line_num: i32,
+    pub difference: Difference,
+    pub line: String,
 }
 
 impl Entry {
@@ -25,8 +25,9 @@ impl Entry {
 
 #[derive(Clone)]
 pub struct Diff {
-    entries: Vec<Entry>,
+    pub entries: Vec<Entry>,
 }
+
 
 impl Diff {
     pub fn new() -> Diff {

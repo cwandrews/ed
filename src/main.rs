@@ -1,6 +1,7 @@
 extern crate getopts;
 
 mod diff;
+mod buffer;
 
 use std::io;
 use std::io::Write;
@@ -110,7 +111,6 @@ fn cmd_line(prompt: &String) -> Result<String, String> {
         })
         .and_then(|_| Ok(line))
 }
-
 
 fn main() {
     let args: Vec<String> = env::args().collect();
