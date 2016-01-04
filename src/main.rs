@@ -10,11 +10,13 @@ use getopts::Options;
 
 static CurrentAddress: Address = Address::Nth(1);
 
+#[derive(Clone)]
 struct Range {
     start: Box<Address>,
     end: Box<Address>,
 }
 
+#[derive(Clone)]
 enum Address {
     Current,
     Last,
@@ -52,6 +54,19 @@ fn quit(addr: Address, diff: &diff::Diff) -> Result<diff::Diff, String> {
     Err("Should never get here".to_string())
 }
 
+fn print(addr: Address, diff: &diff::Diff) -> Result<diff::Diff, String> {
+    let fb = buffer::FileBuffer::new(diff.clone(), buffer::BufferFile::NoneGiven);
+    match fb.lines() {
+        Ok(lines) => {
+            for line in lines {
+                println!("{}", line);
+            }
+            Ok(diff.clone())
+        },
+        Err(err) => Err(err.to_string()),
+    }
+}
+
 struct Command {
     address: Address,
     operation: fn(Address, &diff::Diff) -> Result<diff::Diff, String>,
@@ -79,11 +94,12 @@ fn input() -> Result<Vec<String>, io::Error> {
 
 fn parse_cmd(line: &String) -> Result<Command, String> {
     let mut command = Command {
-        address: Address::Current,
+        address: CurrentAddress.clone(),
         operation: match line.trim() {
             "a" => append_after,
             "q" => quit,
             "u" => undo,
+            "p" => print,
             _ => {
                 return Err("Uknown command".to_string())
             },

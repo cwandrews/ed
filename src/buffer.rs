@@ -34,7 +34,7 @@ impl FileBuffer {
                             lines.remove((entry.line_num - 1) as usize);
                         },
                         diff::Difference::Plus => {
-                            if (lines.len() as i32) < entry.line_num + 1 {
+                            if (lines.len() as i32) + 1 < entry.line_num {
                                 return Err("Diff entry for line that doesn't exist".to_string())
                             }
                             lines.insert((entry.line_num - 1) as usize, entry.line.clone());
