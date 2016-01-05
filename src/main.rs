@@ -59,8 +59,9 @@ fn print(addr: Address, diff: &diff::Diff) -> Result<diff::Diff, String> {
     match fb.lines() {
         Ok(lines) => {
             for line in lines {
-                println!("{}", line);
+                print!("{}", line);
             }
+            io::stdout().flush().unwrap();
             Ok(diff.clone())
         },
         Err(err) => Err(err.to_string()),
